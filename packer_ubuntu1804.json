@@ -1,0 +1,86 @@
+{
+    "variables": {
+      "iso_name": "ubuntu-18.04-server-amd64.iso",
+      "iso_path": "18.04",
+      "iso_checksum": "1413c9797dbfa1e57fabfb5c91cfb96f",
+      "iso_checksum_type": "md5",
+      "ssh_name": "vagrant",
+      "ssh_pass": "vagrant",
+      "remote_host": "{{env `REMOTE_HOST`}}",
+      "remote_username": "{{env `REMOTE_USERNAME`}}",
+      "remote_password": "{{env `REMOTE_PASSWORD`}}",
+      "remote_datastore": "{{env `REMOTE_DATASTORE`}}",
+      "vm_name": "Ubuntu-18.04-amd64-base",
+      "box_version": "1804.0.2",
+      "preseed": "preseed.cfg",
+      "virtualbox_version": "6.0.14",
+      "num_cpus": "2",
+      "mem_size": "768",
+      "disk_size": "20480",
+      "linux": "/install/linux",
+      "initrd": "/install/initrd.gz",
+      "headless": "false",
+      "archive_mirror": "http://archive.ubuntu.com/ubuntu"
+    },
+    "builders": [
+      {
+        "type": "virtualbox-iso",
+        "boot_wait": "10s",
+        "disk_size": "{{user `disk_size`}}",
+        "guest_os_type": "Ubuntu_64",
+        "iso_checksum": "{{user `iso_checksum`}}",
+        "iso_checksum_type": "{{user `iso_checksum_type`}}",
+        "iso_urls": [
+          "./iso/{{user `iso_name`}}",
+          "http://ftp.riken.jp/Linux/ubuntu-releases/{{user `iso_path`}}/{{user `iso_name`}}",
+          "http://archive.ubuntu.com/ubuntu/dists/{{user `iso_path`}}/{{user `iso_name`}}",
+          "http://releases.ubuntu.com/{{user `iso_path`}}/{{user `iso_name`}}",
+          "http://cdimages.ubuntu.com/ubuntu/releases/{{user `iso_path`}}/release/{{user `iso_name`}}"
+        ],
+        "communicator": "ssh", 
+        "ssh_pty": "true",
+        "ssh_username": "{{user `ssh_name`}}",
+        "ssh_password": "{{user `ssh_pass`}}",
+        "ssh_port": 22,
+        "ssh_wait_timeout": "10000s",
+        "shutdown_command": "sudo /sbin/shutdown -h now",
+        "output_directory": "output/{{user `vm_name`}}-v{{user `box_version`}}-virtualbox",
+        "guest_additions_mode": "disable",
+        "virtualbox_version_file": ".vbox_version",
+        "vm_name": "{{user `vm_name`}}",
+        "vboxmanage": [
+          [ "modifyvm", "{{.Name}}", "--memory", "{{user `mem_size`}}" ],
+          [ "modifyvm", "{{.Name}}", "--cpus", "{{user `num_cpus`}}" ],
+          [ "modifyvm", "{{.Name}}", "--rtcuseutc", "on" ]
+        ],
+        "http_directory": "http",
+        "headless": "{{user `headless`}}",
+        "boot_command": [
+          "<esc><f6><esc>",
+          "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+          "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+          "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+          "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+          "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+          "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+          "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+          "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+          "<bs><bs><bs>",
+          "{{user `linux`}} ",
+          "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `preseed`}} ",
+          "debian-installer=en_US auto=true locale=en_US kbd-chooser/method=us ",
+          "console-setup/ask_detect=false keyboard-configuration/layoutcode=us ",
+          "hostname=vagrant ",
+          "initrd={{user `initrd`}} quiet --- <enter>"
+        ]
+      }
+    ],
+    "post-processors": [
+      {
+        "type": "vagrant",
+        "only": ["virtualbox-iso"],
+        "compression_level": 6,
+        "output": "./{{user `vm_name`}}-v{{user `box_version`}}-{{ .Provider }}.box"
+      }
+    ]
+  }
